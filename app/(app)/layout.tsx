@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <DataLoader>
-      <div className="safe-top mx-auto flex w-full max-w-lg flex-1 flex-col pb-24">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-24">
         {children}
       </div>
       <BottomNav />

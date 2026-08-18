@@ -20,7 +20,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // Translucent lets the page draw under the status bar / Dynamic Island
+    // instead of leaving a solid bar there — body's safe-area-inset-top
+    // padding (globals.css) keeps content itself clear of that area.
+    statusBarStyle: "black-translucent",
     title: "Routine",
   },
   other: {

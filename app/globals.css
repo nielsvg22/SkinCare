@@ -256,6 +256,10 @@
     min-height: 100%;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
+    /* Applied globally (not per-page) so every screen — including
+       login/signup — clears the Dynamic Island / notch once the iOS status
+       bar is translucent (see appleWebApp.statusBarStyle in layout.tsx). */
+    padding-top: env(safe-area-inset-top);
   }
 
   button {
@@ -274,9 +278,6 @@
 }
 
 @layer utilities {
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }

@@ -27,7 +27,7 @@ for (const t of targets) {
         width: t.size,
         height: t.size,
         channels: 4,
-        background: { r: 22, g: 35, b: 58, alpha: 1 },
+        background: { r: 243, g: 233, b: 216, alpha: 1 },
       },
     })
       .composite([{ input: buf, gravity: "center" }])

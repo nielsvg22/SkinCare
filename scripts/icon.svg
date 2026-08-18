@@ -1,13 +1,46 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7FB8D9"/>
-      <stop offset="1" stop-color="#16233A"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDFAF4"/>
+      <stop offset="0.55" stop-color="#F3E9D8"/>
+      <stop offset="1" stop-color="#E3D2B4"/>
     </linearGradient>
+    <linearGradient id="ring" x1="180" y1="180" x2="844" y2="844" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16233A"/>
+      <stop offset="0.6" stop-color="#2F4560"/>
+      <stop offset="1" stop-color="#D98A3F"/>
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="42%" r="65%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ringShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#16233A" flood-opacity="0.22"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <g transform="translate(256 256)">
-    <circle r="140" fill="none" stroke="#FAF6EF" stroke-width="22" stroke-linecap="round" stroke-dasharray="720" stroke-dashoffset="120" transform="rotate(-90)"/>
-    <path d="M -58 6 L -18 46 L 62 -46" fill="none" stroke="#FAF6EF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#innerGlow)"/>
+
+  <g filter="url(#ringShadow)">
+    <circle cx="512" cy="512" r="268" fill="none" stroke="#EADFC8" stroke-width="46"/>
+    <circle
+      cx="512" cy="512" r="268"
+      fill="none"
+      stroke="url(#ring)"
+      stroke-width="46"
+      stroke-linecap="round"
+      stroke-dasharray="1263 1684"
+      transform="rotate(-90 512 512)"
+    />
   </g>
+
+  <path
+    d="M420 520 L488 588 L616 448"
+    fill="none"
+    stroke="#16233A"
+    stroke-width="40"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>
