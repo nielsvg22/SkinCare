@@ -29,7 +29,7 @@ app/
     week/, products/, progress/, settings/
   login/, signup/            Auth-schermen (geen bottom nav)
   auth/confirm/               E-mailbevestigingslink-handler
-  api/push/                  subscribe, unsubscribe, send-morning (cron target)
+  api/push/                  subscribe, unsubscribe, send-reminders (hourly cron target)
 components/
   ui/                        Eigen shadcn-stijl primitives
   routine/, products/, week/, shopping/, checkin/, photos/, stats/, settings/, nav/, layout/, pwa/, auth/
@@ -146,28 +146,29 @@ Ontbreekt een afbeelding? Dan valt de UI altijd netjes terug op een
 placeholder met een categorie-icoon — de app breekt nooit op een missende
 afbeelding.
 
-## Ochtendmelding om 07:00 — hoe dit werkt (en de beperkingen)
+## Meldingen — hoe dit werkt (en de beperkingen)
 
 Zodra je "Herinneringen" aanzet in Instellingen, abonneert je toestel zich op
 **Web Push** (niet alleen een lokale timer): een Vercel Cron-taak stuurt
 serverside een echte melding, ook als de app/PWA op dat moment gesloten is.
+`/api/push/send-reminders` draait elk heel uur (24 cron-taken, zie
+`vercel.json`) en checkt daarbinnen per account of het huidige Amsterdamse
+uur overeenkomt met de ingestelde ochtend- of avondtijd. Dat elk-uur-patroon
+is bewust gekozen: het werkt correct voor élk zelfgekozen tijdstip en voor
+zomer-/wintertijd, zonder per tijdstip apart cron-gedoe.
 
-Twee praktische beperkingen, allebei van het gratis Vercel-plan, niet van deze
-app:
+Wat er verstuurd wordt:
+- **Ochtend**: alleen als je ochtendroutine dat moment nog niet volledig is
+  afgevinkt (geen ping als je toch al klaar was) — plus een aparte melding
+  als er producten bijna op zijn.
+- **Avond**: idem, alleen als je avondroutine nog niet klaar is.
+- **Zondagavond**: een herinnering voor het wekelijkse logboek, alleen als je
+  deze week nog niets hebt ingevuld.
 
-1. **Tijdvenster, geen exacte minuut**: Vercel's gratis cron-jobs draaien
-   hooguit 1× per dag en Vercel garandeert alleen "ergens binnen dat uur", dus
-   de melding kan tussen 07:00–07:59 binnenkomen. Voor minuut-precisie is een
-   Vercel Pro-abonnement nodig.
-2. **Zomer-/wintertijd**: een gratis cron-tijd is vast in UTC, terwijl 07:00
-   Nederlandse tijd in de zomer een ander UTC-moment is dan in de winter. Deze
-   app lost dat op met twee cron-taken (05:00 en 06:00 UTC) die allebei
-   `/api/push/send-morning` aanroepen; de functie zelf controleert de actuele
-   Amsterdamse tijd en verstuurt alleen als het echt rond 07:00 lokale tijd is
-   — dus je krijgt 'm maar één keer, jaarrond correct.
-
-Je ochtend-tijdstip in Instellingen bepaalt dit (standaard 07:00); wijzig het
-daar als je een ander tijdstip wilt.
+Eén praktische beperking, van het gratis Vercel-plan, niet van deze app:
+Vercel garandeert bij gratis cron-jobs alleen "ergens binnen het geplande
+uur", dus een melding kan een stuk later binnenkomen dan het exacte
+tijdstip. Voor minuut-precisie is een Vercel Pro-abonnement nodig.
 
 ## Data back-uppen (export/import)
 
