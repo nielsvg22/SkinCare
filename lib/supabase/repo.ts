@@ -73,7 +73,10 @@ export async function fetchAllData(supabase: SupabaseClient, userId: string): Pr
 }
 
 async function seedProductsForUser(supabase: SupabaseClient, userId: string) {
-  const rows = SEED_PRODUCTS.map((p) => productToRow(p, userId));
+  // products.id is a global primary key (not scoped per user), so the seed
+  // catalogue's friendly slugs ("boost-shampoo", ...) can only ever be used
+  // once across ALL accounts — give every seeded row a fresh unique id.
+  const rows = SEED_PRODUCTS.map((p) => productToRow({ ...p, id: crypto.randomUUID() }, userId));
   return supabase.from("products").insert(rows);
 }
 

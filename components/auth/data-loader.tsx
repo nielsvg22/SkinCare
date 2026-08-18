@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllData } from "@/lib/supabase/repo";
 import { useStore } from "@/lib/store";
+import { LoadingScreen } from "@/components/auth/loading-screen";
 
 /**
  * Loads the signed-in user's data from Supabase into the store on mount, and
@@ -61,14 +62,7 @@ export function DataLoader({ children }: { children: React.ReactNode }) {
   }
 
   if (!hasHydrated) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-9 animate-spin rounded-full border-[3px] border-border-strong border-t-accent" />
-          <span className="text-sm text-foreground-muted">Routine laden…</span>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return <>{children}</>;
