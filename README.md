@@ -125,47 +125,6 @@ de link zodat zij haar eigen account kan aanmaken.
 4. Open de app vanaf het beginscherm-icoon: hij start zonder Safari-UI, met
    eigen statusbalk-integratie en safe-area padding voor de notch/home-indicator.
 
-## Als native app via AltStore PAL (optioneel)
-
-De PWA hierboven werkt al als een volwaardige app. Wil je 'm daarnaast ook als
-een echt gecompileerd `.ipa`-bestand via [AltStore PAL](https://altstore.io)
-(EU-marketplace, geen computer nodig) op je iPhone — dat kan, maar dat is een
-apart, groter traject met eigen vereisten:
-
-**Wat er al staat (door mij opgezet):**
-- `capacitor.config.ts` + `ios/` — een native Xcode-project (Capacitor) dat
-  een WebView toont die naar de live site wijst. Geen aparte build/bundel
-  nodig omdat de app server-functies gebruikt (login, database) die niet
-  statisch te exporteren zijn.
-- `codemagic.yaml` — een cloud-Mac build-configuratie (nodig omdat ik hier
-  op Windows geen Xcode kan draaien) die het project bouwt en signeert tot
-  een `.ipa`.
-- `altstore/source.json` — een template voor de "source" die je in AltStore
-  PAL toevoegt, zodat de app daar verschijnt.
-
-**Wat jij nog moet doen (vereist jouw eigen accounts/Apple ID — dat kan en
-mag ik niet voor je invullen):**
-
-1. Maak een gratis account op [codemagic.io](https://codemagic.io) en
-   koppel de `nielsvg22/SkinCare`-repo.
-2. In Codemagic → **Team settings → Code signing identities**: upload je
-   Apple Distribution-certificaat en een Ad Hoc (of Development)
-   provisioning profile voor app-id `nl.nielsvg22.verzorgingsroutine`, in
-   een groep genaamd `ios_signing`. Heb je nog geen Apple Developer-account,
-   dan kan dit ook (beperkter, met een gratis Apple ID) — het certificaat
-   verloopt dan elke 7 dagen en moet je opnieuw laten signeren; een betaald
-   Apple Developer-account (€99/jaar) voorkomt dat.
-3. Start de `ios-altstore`-workflow in Codemagic. Het `.ipa`-bestand komt
-   als build-artifact beschikbaar (of zet 'm in een GitHub Release).
-4. Vul in `altstore/source.json` de velden `version`, `date`, `downloadURL`
-   (link naar dat `.ipa`) en `size` in, en host dit JSON-bestand ergens
-   publiek bereikbaar (bijv. ook als GitHub Release-asset, of via
-   `raw.githubusercontent.com`). Check het resultaat tegen
-   [AltStore's source-spec](https://faq.altstore.io/developers/make-a-source)
-   voordat je 'm gebruikt.
-5. In AltStore PAL op je iPhone: voeg de URL naar dat `source.json` toe als
-   custom source, en installeer de app eruit.
-
 ## Accounts & data-scheiding
 
 Elk account (via **/signup**) krijgt een volledig eigen set producten,
