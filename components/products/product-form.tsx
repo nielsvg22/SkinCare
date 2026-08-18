@@ -24,7 +24,11 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductImage } from "@/components/products/product-image";
+import { LibraryPickerDialog } from "@/components/products/library-picker-dialog";
+import { BarcodeScannerDialog } from "@/components/products/barcode-scanner-dialog";
 import { WEEKDAY_LABELS_SHORT } from "@/lib/data/seed";
+import { libraryToInput, type LibraryProduct } from "@/lib/data/product-library";
+import type { BarcodeLookupResult } from "@/lib/utils/barcode";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES: ProductCategory[] = ["Haar", "Lichaam", "Ogen", "Gezicht", "Overig"];
@@ -162,6 +166,36 @@ export function ProductForm({ product, initialCategory, initialShaveOnly }: Prod
     setValues((v) => ({ ...v, [key]: value }));
   }
 
+  function applyLibraryItem(item: LibraryProduct) {
+    const input = libraryToInput(item);
+    setValues((v) => ({
+      ...v,
+      name: input.name ?? v.name,
+      brand: input.brand ?? v.brand,
+      category: input.category ?? v.category,
+      volume: input.volume !== undefined ? String(input.volume) : v.volume,
+      unit: input.unit ?? v.unit,
+      period: input.period ?? v.period,
+      frequencyType: input.frequency?.type ?? v.frequencyType,
+      weekdays: input.frequency?.type === "specificWeekdays" ? input.frequency.weekdays : v.weekdays,
+      timesPerWeek: input.frequency?.type === "timesPerWeek" ? String(input.frequency.times) : v.timesPerWeek,
+      instructions: input.instructions ?? v.instructions,
+      usageMin: input.usagePerApplication ? String(input.usagePerApplication.min) : v.usageMin,
+      usageMax: input.usagePerApplication ? String(input.usagePerApplication.max) : v.usageMax,
+      usageUnit: input.usagePerApplication?.unit ?? v.usageUnit,
+    }));
+    toast.success("Velden ingevuld vanuit de bibliotheek");
+  }
+
+  function applyBarcodeResult(result: BarcodeLookupResult) {
+    setValues((v) => ({
+      ...v,
+      name: result.name || v.name,
+      brand: result.brand || v.brand,
+    }));
+    toast.success("Product gevonden — controleer en vul de overige velden aan");
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !userId) return;
@@ -238,6 +272,13 @@ export function ProductForm({ product, initialCategory, initialShaveOnly }: Prod
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 px-5 pb-10">
+      {!isEditing && (
+        <section className="flex flex-wrap gap-2">
+          <LibraryPickerDialog onPick={applyLibraryItem} />
+          <BarcodeScannerDialog onFound={applyBarcodeResult} />
+        </section>
+      )}
+
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-foreground-muted">Basisgegevens</h2>
 
