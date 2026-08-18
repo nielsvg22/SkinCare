@@ -132,6 +132,7 @@ export function settingsFromRow(row: Record<string, unknown> | null): Settings {
       defaultLowStockThresholdDays: 21,
       remindersEnabled: false,
       onboardedAt: new Date().toISOString(),
+      shareShoppingList: false,
     };
   }
   return {
@@ -142,6 +143,8 @@ export function settingsFromRow(row: Record<string, unknown> | null): Settings {
     defaultLowStockThresholdDays: Number(row.default_low_stock_threshold_days),
     remindersEnabled: !!row.reminders_enabled,
     onboardedAt: row.onboarded_at as string,
+    partnerId: (row.partner_id as string) ?? null,
+    shareShoppingList: !!row.share_shopping_list,
   };
 }
 
@@ -154,5 +157,6 @@ export function settingsToRow(settings: Partial<Settings>) {
   if (settings.defaultLowStockThresholdDays !== undefined)
     row.default_low_stock_threshold_days = settings.defaultLowStockThresholdDays;
   if (settings.remindersEnabled !== undefined) row.reminders_enabled = settings.remindersEnabled;
+  if (settings.shareShoppingList !== undefined) row.share_shopping_list = settings.shareShoppingList;
   return row;
 }

@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultLowStockThresholdDays: 21,
   remindersEnabled: false,
   onboardedAt: new Date().toISOString(),
+  shareShoppingList: false,
 };
 
 export const SEED_SHOPPING_LIST: ShoppingItem[] = [

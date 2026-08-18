@@ -11,6 +11,7 @@ import { ExportImport } from "@/components/settings/export-import";
 import { RemindersToggle } from "@/components/settings/reminders-toggle";
 import { SignOutButton } from "@/components/settings/sign-out-button";
 import { AppLockToggle } from "@/components/settings/app-lock-toggle";
+import { PartnerLink } from "@/components/settings/partner-link";
 import { BackupList } from "@/components/settings/backup-list";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,10 @@ export default function SettingsPage() {
           <SettingsRow label="Appvergrendeling">
             <AppLockToggle />
           </SettingsRow>
+        </SettingsSection>
+
+        <SettingsSection title="Partner" description="Optioneel — deel een gecombineerde streak en/of je boodschappenlijst">
+          <PartnerLink />
         </SettingsSection>
 
         <SettingsSection title="Account">

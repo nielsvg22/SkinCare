@@ -13,7 +13,9 @@ create table if not exists public.profiles (
   evening_time text not null default '22:00',
   default_low_stock_threshold_days integer not null default 21,
   reminders_enabled boolean not null default false,
-  onboarded_at timestamptz not null default now()
+  onboarded_at timestamptz not null default now(),
+  partner_id uuid references public.profiles(id) on delete set null,
+  share_shopping_list boolean not null default false
 );
 
 alter table public.profiles enable row level security;
@@ -21,6 +23,28 @@ alter table public.profiles enable row level security;
 drop policy if exists "profiles are self-accessible" on public.profiles;
 create policy "profiles are self-accessible" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
+
+drop policy if exists "partner profile is readable" on public.profiles;
+create policy "partner profile is readable" on public.profiles
+  for select using (auth.uid() = partner_id);
+
+-- ─────────────────────────────────────────────────────────────
+-- Partner pairing — short-lived invite codes redeemed via a server route
+-- (service_role), since the redeemer isn't the creator and needs to update
+-- BOTH profiles' partner_id, which no per-user RLS policy could allow.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.partner_invites (
+  code text primary key,
+  created_by uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default (now() + interval '24 hours')
+);
+
+alter table public.partner_invites enable row level security;
+
+drop policy if exists "users manage their own invites" on public.partner_invites;
+create policy "users manage their own invites" on public.partner_invites
+  for all using (auth.uid() = created_by) with check (auth.uid() = created_by);
 
 -- ─────────────────────────────────────────────────────────────
 -- Products
@@ -59,6 +83,11 @@ drop policy if exists "products are self-accessible" on public.products;
 create policy "products are self-accessible" on public.products
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Read-only: lets a linked partner compute a combined streak widget.
+drop policy if exists "partner can view products" on public.products;
+create policy "partner can view products" on public.products
+  for select using (auth.uid() = (select partner_id from public.profiles where id = products.user_id));
+
 create index if not exists products_user_id_idx on public.products(user_id);
 
 -- ─────────────────────────────────────────────────────────────
@@ -81,6 +110,10 @@ drop policy if exists "daily_logs are self-accessible" on public.daily_logs;
 create policy "daily_logs are self-accessible" on public.daily_logs
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "partner can view daily_logs" on public.daily_logs;
+create policy "partner can view daily_logs" on public.daily_logs
+  for select using (auth.uid() = (select partner_id from public.profiles where id = daily_logs.user_id));
+
 create index if not exists daily_logs_user_id_idx on public.daily_logs(user_id);
 
 -- ─────────────────────────────────────────────────────────────
@@ -101,6 +134,24 @@ alter table public.shopping_items enable row level security;
 drop policy if exists "shopping_items are self-accessible" on public.shopping_items;
 create policy "shopping_items are self-accessible" on public.shopping_items
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Only when the owner explicitly turned sharing on — partner can view AND
+-- check items off (e.g. while out shopping together), but not add/delete.
+drop policy if exists "partner can view shared shopping_items" on public.shopping_items;
+create policy "partner can view shared shopping_items" on public.shopping_items
+  for select using (
+    auth.uid() = (
+      select partner_id from public.profiles where id = shopping_items.user_id and share_shopping_list
+    )
+  );
+
+drop policy if exists "partner can toggle shared shopping_items" on public.shopping_items;
+create policy "partner can toggle shared shopping_items" on public.shopping_items
+  for update using (
+    auth.uid() = (
+      select partner_id from public.profiles where id = shopping_items.user_id and share_shopping_list
+    )
+  );
 
 create index if not exists shopping_items_user_id_idx on public.shopping_items(user_id);
 

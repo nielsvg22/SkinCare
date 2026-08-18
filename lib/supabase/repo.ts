@@ -69,6 +69,15 @@ export async function fetchAllData(supabase: SupabaseClient, userId: string): Pr
   const checkIns: WeeklyCheckIn[] = (checkInsRes.data ?? []).map(checkInFromRow);
   const photos: ProgressPhoto[] = (photosRes.data ?? []).map(photoFromRow);
 
+  if (settings.partnerId) {
+    const { data: partnerProfile } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", settings.partnerId)
+      .maybeSingle();
+    settings.partnerName = partnerProfile?.name ?? null;
+  }
+
   return { version: STORE_VERSION, settings, products, logs, shoppingList, checkIns, photos };
 }
 

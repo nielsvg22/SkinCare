@@ -146,6 +146,7 @@ const emptyState: AppState = {
     defaultLowStockThresholdDays: 21,
     remindersEnabled: false,
     onboardedAt: new Date().toISOString(),
+    shareShoppingList: false,
   },
   products: [],
   logs: {},

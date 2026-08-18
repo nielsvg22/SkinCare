@@ -134,6 +134,11 @@ export interface Settings {
   /** Best-effort local reminders while the app/tab is open — see README for iOS PWA push limitations. */
   remindersEnabled: boolean;
   onboardedAt: string;
+  /** Linked partner account (opt-in pairing) — null when not paired. */
+  partnerId?: string | null;
+  partnerName?: string | null;
+  /** Whether THIS account's shopping list is visible/checkable by its paired partner. */
+  shareShoppingList: boolean;
 }
 
 export interface AppState {

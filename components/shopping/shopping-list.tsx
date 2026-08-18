@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { isLowStock } from "@/lib/utils/consumption";
+import { PartnerShoppingList } from "@/components/shopping/partner-shopping-list";
 
 export function ShoppingList() {
   const shoppingList = useStore((s) => s.shoppingList);
@@ -103,6 +104,8 @@ export function ShoppingList() {
           )}
         </div>
       )}
+
+      <PartnerShoppingList />
     </div>
   );
 }

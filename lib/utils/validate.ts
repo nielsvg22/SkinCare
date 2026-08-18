@@ -61,6 +61,9 @@ const settingsSchema = z.object({
   defaultLowStockThresholdDays: z.number(),
   remindersEnabled: z.boolean(),
   onboardedAt: z.string(),
+  partnerId: z.string().nullable().optional(),
+  partnerName: z.string().nullable().optional(),
+  shareShoppingList: z.boolean().optional(),
 });
 
 const shoppingItemSchema = z.object({
