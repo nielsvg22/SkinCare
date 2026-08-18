@@ -29,14 +29,15 @@ export async function fetchAllData(supabase: SupabaseClient, userId: string): Pr
   let products = (productsRes.data ?? []).map(productFromRow);
 
   // First-ever login for this account: seed the starter catalogue once.
+  // Always re-read afterwards, even on a conflict error — a duplicate-key
+  // failure here means a concurrent load already seeded successfully, so the
+  // re-read still needs to happen to pick up those rows instead of leaving
+  // `products` stuck at the stale pre-seed empty array.
   if (products.length === 0 && !productsRes.error) {
     const { error } = await seedProductsForUser(supabase, userId);
-    if (error) {
-      console.error("Failed to seed starter products:", error.message);
-    } else {
-      const reseeded = await supabase.from("products").select("*").eq("user_id", userId).order("sort_order");
-      products = (reseeded.data ?? []).map(productFromRow);
-    }
+    if (error) console.error("Failed to seed starter products:", error.message);
+    const reseeded = await supabase.from("products").select("*").eq("user_id", userId).order("sort_order");
+    products = (reseeded.data ?? []).map(productFromRow);
   }
 
   const logs: Record<string, DailyLog> = {};
@@ -47,7 +48,8 @@ export async function fetchAllData(supabase: SupabaseClient, userId: string): Pr
 
   let shoppingList: ShoppingItem[] = (shoppingRes.data ?? []).map(shoppingItemFromRow);
 
-  // First-ever login: seed the starter shopping list suggestions too.
+  // First-ever login: seed the starter shopping list suggestions too (same
+  // always-reread-afterwards reasoning as the products seed above).
   if (shoppingList.length === 0 && !shoppingRes.error) {
     const { error } = await supabase.from("shopping_items").insert(
       SEED_SHOPPING_LIST.map((item) => ({
@@ -58,12 +60,9 @@ export async function fetchAllData(supabase: SupabaseClient, userId: string): Pr
         created_at: item.createdAt,
       }))
     );
-    if (error) {
-      console.error("Failed to seed starter shopping list:", error.message);
-    } else {
-      const reseeded = await supabase.from("shopping_items").select("*").eq("user_id", userId).order("created_at");
-      shoppingList = (reseeded.data ?? []).map(shoppingItemFromRow);
-    }
+    if (error) console.error("Failed to seed starter shopping list:", error.message);
+    const reseeded = await supabase.from("shopping_items").select("*").eq("user_id", userId).order("created_at");
+    shoppingList = (reseeded.data ?? []).map(shoppingItemFromRow);
   }
 
   const settings: Settings = settingsFromRow(profileRes.data ?? null);

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { Loader2, MailCheck, Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { signUp, type AuthActionState } from "../login/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,23 +12,6 @@ const initialState: AuthActionState = {};
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
-
-  if (state.needsEmailConfirmation) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-        <div className="flex size-12 items-center justify-center rounded-radius-lg bg-green-50 text-green-600">
-          <MailCheck className="size-6" />
-        </div>
-        <h1 className="text-lg font-semibold text-foreground">Bevestig je e-mailadres</h1>
-        <p className="max-w-xs text-sm text-foreground-muted">
-          We hebben je een bevestigingslink gestuurd. Klik erop om je account te activeren en daarna in te loggen.
-        </p>
-        <Button asChild variant="outline">
-          <Link href="/login">Naar inloggen</Link>
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">

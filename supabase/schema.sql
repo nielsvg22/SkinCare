@@ -84,7 +84,8 @@ create index if not exists daily_logs_user_id_idx on public.daily_logs(user_id);
 -- Shopping list
 -- ─────────────────────────────────────────────────────────────
 create table if not exists public.shopping_items (
-  id uuid primary key default gen_random_uuid(),
+  -- text, not uuid: the seed suggestions use readable ids (e.g. "shopping-seed-aftershave").
+  id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   done boolean not null default false,

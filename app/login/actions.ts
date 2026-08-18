@@ -3,10 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface AuthActionState {
   error?: string;
-  needsEmailConfirmation?: boolean;
 }
 
 export async function signIn(_prevState: AuthActionState, formData: FormData): Promise<AuthActionState> {
@@ -44,22 +44,30 @@ export async function signUp(_prevState: AuthActionState, formData: FormData): P
     return { error: "Wachtwoorden komen niet overeen" };
   }
 
-  const supabase = await createClient();
-  const { error, data } = await supabase.auth.signUp({
+  // Created via the admin API (server-only, service_role key) and immediately
+  // confirmed — this is a 2-person personal app, not a public product that
+  // needs email-based identity verification, so we skip Supabase's mailer
+  // entirely rather than depend on its shared/rate-limited SMTP.
+  const admin = createAdminClient();
+  const { error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    options: { data: { name } },
+    email_confirm: true,
+    user_metadata: { name },
   });
 
-  if (error) {
-    if (error.message.toLowerCase().includes("already registered")) {
+  if (createError) {
+    if (createError.code === "email_exists" || createError.message.toLowerCase().includes("already")) {
       return { error: "Er bestaat al een account met dit e-mailadres" };
     }
     return { error: "Aanmaken van account is mislukt — probeer het opnieuw" };
   }
 
-  if (!data.session) {
-    return { needsEmailConfirmation: true };
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (signInError) {
+    return { error: "Account is aangemaakt, maar inloggen is mislukt — probeer opnieuw in te loggen" };
   }
 
   revalidatePath("/", "layout");
