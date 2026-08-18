@@ -6,6 +6,11 @@ import { fetchAllData } from "@/lib/supabase/repo";
 import { useStore } from "@/lib/store";
 import { LoadingScreen } from "@/components/auth/loading-screen";
 
+// A load that resolves in a handful of milliseconds reads as a jarring flash
+// rather than a loading state — holding the screen for at least this long
+// makes it feel intentional instead of glitchy.
+const MIN_VISIBLE_MS = 500;
+
 /**
  * Loads the signed-in user's data from Supabase into the store on mount, and
  * keeps it in sync with auth state changes (sign-out from this or another
@@ -16,6 +21,12 @@ export function DataLoader({ children }: { children: React.ReactNode }) {
   const hydrate = useStore((s) => s.hydrate);
   const reset = useStore((s) => s.reset);
   const [loadError, setLoadError] = useState(false);
+  const [minDelayDone, setMinDelayDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinDelayDone(true), MIN_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,7 +72,7 @@ export function DataLoader({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!hasHydrated) {
+  if (!hasHydrated || !minDelayDone) {
     return <LoadingScreen />;
   }
 
