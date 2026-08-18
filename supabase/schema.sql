@@ -15,7 +15,12 @@ create table if not exists public.profiles (
   reminders_enabled boolean not null default false,
   onboarded_at timestamptz not null default now(),
   partner_id uuid references public.profiles(id) on delete set null,
-  share_shopping_list boolean not null default false
+  share_shopping_list boolean not null default false,
+  -- Atomic claim flag for one-time starter-catalogue seeding on first login
+  -- (see lib/supabase/repo.ts) — prevents the starter products/shopping list
+  -- from ever being inserted twice, no matter how many overlapping calls a
+  -- sign-in triggers.
+  has_seeded boolean not null default false
 );
 
 alter table public.profiles enable row level security;

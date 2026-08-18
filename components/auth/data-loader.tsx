@@ -31,21 +31,33 @@ export function DataLoader({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
+    // Supabase fires a "SIGNED_IN" event immediately upon subscribing when a
+    // session already exists, which races with the direct load() call below
+    // — both can see zero products and both seed the starter catalogue,
+    // doubling every new account. Collapsing concurrent calls into a single
+    // shared in-flight promise fixes that at the source.
+    let inFlight: Promise<void> | null = null;
 
-    async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        reset();
-        return;
-      }
-      try {
-        const data = await fetchAllData(supabase, user.id);
-        if (!cancelled) hydrate(user.id, data);
-      } catch {
-        if (!cancelled) setLoadError(true);
-      }
+    function load(): Promise<void> {
+      if (inFlight) return inFlight;
+      inFlight = (async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          if (!cancelled) reset();
+          return;
+        }
+        try {
+          const data = await fetchAllData(supabase, user.id);
+          if (!cancelled) hydrate(user.id, data);
+        } catch {
+          if (!cancelled) setLoadError(true);
+        }
+      })().finally(() => {
+        inFlight = null;
+      });
+      return inFlight;
     }
 
     load();
