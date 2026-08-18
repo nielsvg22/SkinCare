@@ -110,7 +110,7 @@ export function buildRoutineForDay(
   log: DailyLog | undefined,
   shaveDayEnabled: boolean
 ): RoutineDay {
-  const active = products.filter((p) => !p.paused);
+  const active = products.filter((p) => !p.paused && !p.customMoment);
 
   // ---- Morning ----
   const morningProducts = active.filter(
@@ -183,11 +183,23 @@ export function buildRoutineForDay(
     });
   evening.forEach((step, idx) => (step.order = idx + 1));
 
-  return { morning, evening };
+  // ---- Custom moments (e.g. "Na het sporten") ----
+  const custom: Record<string, RoutineStepView[]> = {};
+  const customProducts = products.filter((p) => !p.paused && p.customMoment && !p.shaveOnly);
+  customProducts
+    .sort((a, b) => a.order - b.order)
+    .forEach((p) => {
+      const label = p.customMoment!;
+      if (!custom[label]) custom[label] = [];
+      custom[label].push(toProductStep(p, date, log, shaveDayEnabled));
+    });
+  Object.values(custom).forEach((steps) => steps.forEach((step, idx) => (step.order = idx + 1)));
+
+  return { morning, evening, custom };
 }
 
 export function requiredStepIds(day: RoutineDay): string[] {
-  return [...day.morning, ...day.evening]
+  return [...day.morning, ...day.evening, ...Object.values(day.custom).flat()]
     .filter((s) => s.scheduledToday && !s.optionalToday && !s.placeholder)
     .map((s) => s.id);
 }

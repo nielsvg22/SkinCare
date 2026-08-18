@@ -56,6 +56,14 @@ export interface Product {
   usagePerApplication: UsageAmount;
   stock: ProductStock;
   purchasePrice?: number;
+  /** Where this product is usually bought — shown as a "buy again" link when stock is low. */
+  purchaseUrl?: string;
+  /**
+   * Custom routine moment (e.g. "Na het sporten") beyond morning/evening.
+   * When set, the product is grouped under this label instead of the
+   * morning/evening sections and `period` is ignored for placement.
+   */
+  customMoment?: string;
   /** Only relevant/used during shave-day routine (e.g. aftershave). */
   shaveOnly?: boolean;
   /** Step is optional: can be skipped for a day without breaking the streak. */
@@ -76,6 +84,8 @@ export interface DailyLog {
   completedStepIds: string[]; // productIds (or synthetic step ids like "shave:scheren")
   skippedStepIds: string[]; // voluntarily skipped optional steps
   shaveDayEnabled: boolean;
+  /** Vacation/pause mode: the day is excluded from streaks entirely (not a miss). */
+  dayPaused?: boolean;
 }
 
 export interface WeeklyCheckIn {
@@ -163,4 +173,6 @@ export interface RoutineStepView {
 export interface RoutineDay {
   morning: RoutineStepView[];
   evening: RoutineStepView[];
+  /** Custom routine moments (e.g. "Na het sporten"), keyed by label. */
+  custom: Record<string, RoutineStepView[]>;
 }

@@ -51,9 +51,12 @@ interface FormValues {
   openIsOpen: boolean;
   openRemainingPercent: number;
   purchasePrice: string;
+  purchaseUrl: string;
   optional: boolean;
   conditionalNote: string;
   shaveOnly: boolean;
+  useCustomMoment: boolean;
+  customMoment: string;
 }
 
 function defaultValues(overrides?: Partial<FormValues>): FormValues {
@@ -76,9 +79,12 @@ function defaultValues(overrides?: Partial<FormValues>): FormValues {
     openIsOpen: true,
     openRemainingPercent: 100,
     purchasePrice: "",
+    purchaseUrl: "",
     optional: false,
     conditionalNote: "",
     shaveOnly: false,
+    useCustomMoment: false,
+    customMoment: "",
     ...overrides,
   };
 }
@@ -103,9 +109,12 @@ function productToValues(product: Product): FormValues {
     openIsOpen: product.stock.openBottle.isOpen,
     openRemainingPercent: product.stock.openBottle.remainingPercent,
     purchasePrice: product.purchasePrice !== undefined ? String(product.purchasePrice) : "",
+    purchaseUrl: product.purchaseUrl ?? "",
     optional: !!product.optional,
     conditionalNote: product.conditionalNote ?? "",
     shaveOnly: !!product.shaveOnly,
+    useCustomMoment: !!product.customMoment,
+    customMoment: product.customMoment ?? "",
   };
 }
 
@@ -209,9 +218,11 @@ export function ProductForm({ product, initialCategory, initialShaveOnly }: Prod
         },
       },
       purchasePrice: values.purchasePrice ? Number(values.purchasePrice) : undefined,
+      purchaseUrl: values.purchaseUrl.trim() || undefined,
       optional: values.optional,
       conditionalNote: values.optional && values.conditionalNote ? values.conditionalNote : undefined,
       shaveOnly: values.shaveOnly,
+      customMoment: values.useCustomMoment && values.customMoment.trim() ? values.customMoment.trim() : undefined,
       paused: product?.paused ?? false,
     };
 
@@ -338,18 +349,40 @@ export function ProductForm({ product, initialCategory, initialShaveOnly }: Prod
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-foreground-muted">Gebruik & routine</h2>
 
-        <Field label="Moment">
-          <Select value={values.period} onValueChange={(v) => set("period", v as FormValues["period"])}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="morning">Ochtend</SelectItem>
-              <SelectItem value="evening">Avond</SelectItem>
-              <SelectItem value="both">Ochtend & avond</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
+        <div className="flex items-center justify-between rounded-radius border border-border p-3">
+          <div>
+            <Label htmlFor="custom-moment-toggle" className="text-sm">Eigen routine-moment</Label>
+            <p className="text-xs text-foreground-muted">Bijv. &quot;Na het sporten&quot; — i.p.v. ochtend/avond</p>
+          </div>
+          <Switch
+            id="custom-moment-toggle"
+            checked={values.useCustomMoment}
+            onCheckedChange={(v) => set("useCustomMoment", v)}
+          />
+        </div>
+
+        {values.useCustomMoment ? (
+          <Field label="Naam van het moment">
+            <Input
+              value={values.customMoment}
+              onChange={(e) => set("customMoment", e.target.value)}
+              placeholder="Bijv. Na het sporten"
+            />
+          </Field>
+        ) : (
+          <Field label="Moment">
+            <Select value={values.period} onValueChange={(v) => set("period", v as FormValues["period"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="morning">Ochtend</SelectItem>
+                <SelectItem value="evening">Avond</SelectItem>
+                <SelectItem value="both">Ochtend & avond</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
 
         <Field label="Herhaalpatroon">
           <Select
@@ -494,6 +527,18 @@ export function ProductForm({ product, initialCategory, initialShaveOnly }: Prod
             onChange={(e) => set("purchasePrice", e.target.value)}
             placeholder="€"
           />
+        </Field>
+
+        <Field label="Herbevoorraad-link (optioneel)">
+          <Input
+            type="url"
+            value={values.purchaseUrl}
+            onChange={(e) => set("purchaseUrl", e.target.value)}
+            placeholder="https://..."
+          />
+          <p className="text-xs text-foreground-subtle">
+            Waar je dit product meestal koopt — verschijnt als snelkoppeling bij &quot;bijna op&quot;.
+          </p>
         </Field>
       </section>
 

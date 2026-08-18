@@ -42,6 +42,8 @@ create table if not exists public.products (
   usage_per_application jsonb not null,
   stock jsonb not null,
   purchase_price numeric,
+  purchase_url text,
+  custom_moment text,
   shave_only boolean not null default false,
   optional boolean not null default false,
   conditional_note text,
@@ -69,6 +71,7 @@ create table if not exists public.daily_logs (
   completed_step_ids text[] not null default '{}',
   skipped_step_ids text[] not null default '{}',
   shave_day_enabled boolean not null default false,
+  day_paused boolean not null default false,
   unique (user_id, log_date)
 );
 

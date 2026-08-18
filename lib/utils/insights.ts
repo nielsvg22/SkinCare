@@ -8,7 +8,7 @@ import { parseDateKey } from "@/lib/utils/date";
 /** Partial-credit completion percentage for a single tracked day (0-100). */
 function dayCompletionPercent(products: Product[], logs: Record<string, DailyLog>, dateKey: string): number | null {
   const status = getDayStatus(products, logs, dateKey);
-  if (status === "no-routine" || status === "future") return null;
+  if (status === "no-routine" || status === "future" || status === "paused") return null;
 
   const log = logs[dateKey];
   const date = parseDateKey(dateKey);
@@ -36,7 +36,7 @@ export function lifetimeCompletion(products: Product[], logs: Record<string, Dai
   let completedDays = 0;
   while (cursor <= today) {
     const status = getDayStatus(products, logs, cursor);
-    if (status !== "no-routine" && status !== "future") {
+    if (status !== "no-routine" && status !== "future" && status !== "paused") {
       totalDays += 1;
       if (status === "completed") completedDays += 1;
     }
@@ -62,7 +62,7 @@ export function streakMomentum(products: Product[], logs: Record<string, DailyLo
   for (const key of dateKeys) {
     const prevKey = addDaysToKey(key, -1);
     const prevStatus = getDayStatus(products, logs, prevKey);
-    if (prevStatus === "no-routine") continue; // no signal from a day that had no routine
+    if (prevStatus === "no-routine" || prevStatus === "paused") continue; // no signal from a day that had no routine
 
     const percent = dayCompletionPercent(products, logs, key);
     if (percent === null) continue;

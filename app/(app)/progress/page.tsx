@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatTile } from "@/components/stats/stat-tile";
 import { SimpleBarChart } from "@/components/stats/simple-bar-chart";
 import { StreakEffect } from "@/components/stats/streak-effect";
+import { ExpenseOverview } from "@/components/stats/expense-overview";
 import { CheckInForm } from "@/components/checkin/checkin-form";
 import { CheckInHistory } from "@/components/checkin/checkin-history";
 import { AddPhotoDialog } from "@/components/photos/add-photo-dialog";
@@ -91,6 +92,8 @@ export default function ProgressPage() {
                 )}
               </div>
             )}
+
+            <ExpenseOverview />
 
             <StreakEffect />
           </TabsContent>

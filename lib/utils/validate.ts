@@ -34,6 +34,8 @@ const productSchema = z.object({
     lowStockThresholdDays: z.number().optional(),
   }),
   purchasePrice: z.number().optional(),
+  purchaseUrl: z.string().optional(),
+  customMoment: z.string().optional(),
   shaveOnly: z.boolean().optional(),
   optional: z.boolean().optional(),
   conditionalNote: z.string().optional(),
@@ -48,6 +50,7 @@ const dailyLogSchema = z.object({
   completedStepIds: z.array(z.string()),
   skippedStepIds: z.array(z.string()),
   shaveDayEnabled: z.boolean(),
+  dayPaused: z.boolean().optional(),
 });
 
 const settingsSchema = z.object({

@@ -55,6 +55,7 @@ interface AppActions {
   skipStepToday: (stepId: string, dateKey?: string) => void;
   unskipStepToday: (stepId: string, dateKey?: string) => void;
   setShaveDayEnabled: (enabled: boolean, dateKey?: string) => void;
+  setDayPaused: (paused: boolean, dateKey?: string) => void;
   getShaveDayEnabled: (dateKey?: string) => boolean;
 
   // Products
@@ -187,6 +188,14 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   getShaveDayEnabled: (dateKey = todayKey()) => get().logs[dateKey]?.shaveDayEnabled ?? false,
+
+  setDayPaused: (paused, dateKey = todayKey()) => {
+    const log = ensureLog(get().logs, dateKey);
+    const updated: DailyLog = { ...log, dayPaused: paused };
+    set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
+    const userId = get().userId;
+    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Pauzestand"));
+  },
 
   addProduct: (input) => {
     const product: Product = {

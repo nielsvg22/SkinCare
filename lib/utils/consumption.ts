@@ -60,3 +60,23 @@ export function formatDaysRemaining(days: number | null): string {
   const rounded = Math.round(days);
   return `± ${rounded} ${rounded === 1 ? "dag" : "dagen"}`;
 }
+
+/** Current inventory value: purchase price × containers actually in stock (sealed + the open one). */
+export function currentInventoryValue(products: Product[]): number {
+  return products.reduce((sum, p) => {
+    if (p.purchasePrice === undefined) return sum;
+    const containers = p.stock.bottlesUnopened + (p.stock.openBottle.isOpen ? 1 : 0);
+    return sum + p.purchasePrice * containers;
+  }, 0);
+}
+
+/** Estimated recurring spend per month, based on usage rate and price per container. */
+export function estimatedMonthlySpend(products: Product[]): number {
+  return products.reduce((sum, p) => {
+    if (p.purchasePrice === undefined || p.paused) return sum;
+    const { dailyUsage } = estimateConsumption(p);
+    if (dailyUsage <= 0) return sum;
+    const costPerUnit = p.purchasePrice / p.volume;
+    return sum + costPerUnit * dailyUsage * DAYS_PER_MONTH;
+  }, 0);
+}

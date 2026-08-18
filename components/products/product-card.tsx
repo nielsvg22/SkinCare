@@ -5,8 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
+  ExternalLink,
+  GripVertical,
   Pause,
   Pencil,
   Play,
@@ -33,13 +33,12 @@ const CATEGORY_BADGE: Record<Product["category"], "blue" | "green" | "beige" | "
 
 interface ProductCardProps {
   product: Product;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  /** Combined dnd-kit attributes + listeners for the drag handle, pre-merged by the caller. */
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  isDragging?: boolean;
 }
 
-export function ProductCard({ product, isFirst, isLast, onMoveUp, onMoveDown }: ProductCardProps) {
+export function ProductCard({ product, dragHandleProps, isDragging }: ProductCardProps) {
   const defaultThreshold = useStore((s) => s.settings.defaultLowStockThresholdDays);
   const setProductPaused = useStore((s) => s.setProductPaused);
   const removeProduct = useStore((s) => s.removeProduct);
@@ -62,10 +61,21 @@ export function ProductCard({ product, isFirst, isLast, onMoveUp, onMoveDown }: 
     <div
       className={cn(
         "rounded-radius-lg border bg-surface p-4 shadow-soft-sm transition-opacity",
-        product.paused ? "border-border opacity-60" : "border-border"
+        product.paused ? "border-border opacity-60" : "border-border",
+        isDragging && "shadow-soft-lg opacity-90"
       )}
     >
       <div className="flex gap-4">
+        {dragHandleProps && (
+          <button
+            type="button"
+            className="flex shrink-0 cursor-grab touch-none items-center text-foreground-subtle active:cursor-grabbing"
+            aria-label="Verplaatsen"
+            {...dragHandleProps}
+          >
+            <GripVertical className="size-5" />
+          </button>
+        )}
         <ProductImage image={product.image} name={product.name} category={product.category} className="size-16 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -93,28 +103,30 @@ export function ProductCard({ product, isFirst, isLast, onMoveUp, onMoveDown }: 
             <AlertTriangle className="size-4 shrink-0" />
             Bijna op — nog {Math.max(0, Math.round(consumption.daysRemaining ?? 0))} dagen voorraad
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-orange-400/40 text-orange-600 hover:bg-orange-400/10"
-            onClick={handleAddToShoppingList}
-            disabled={alreadyOnList}
-          >
-            <ShoppingCart className="size-3.5" />
-            {alreadyOnList ? "Op de lijst" : "Op boodschappenlijst"}
-          </Button>
+          <div className="flex gap-2">
+            {product.purchaseUrl && (
+              <Button asChild size="sm" variant="outline" className="border-orange-400/40 text-orange-600 hover:bg-orange-400/10">
+                <a href={product.purchaseUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="size-3.5" />
+                  Opnieuw bestellen
+                </a>
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-orange-400/40 text-orange-600 hover:bg-orange-400/10"
+              onClick={handleAddToShoppingList}
+              disabled={alreadyOnList}
+            >
+              <ShoppingCart className="size-3.5" />
+              {alreadyOnList ? "Op de lijst" : "Op boodschappenlijst"}
+            </Button>
+          </div>
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        <div className="flex items-center gap-1">
-          <Button size="icon-sm" variant="ghost" onClick={onMoveUp} disabled={isFirst} aria-label="Omhoog verplaatsen">
-            <ArrowUp className="size-4" />
-          </Button>
-          <Button size="icon-sm" variant="ghost" onClick={onMoveDown} disabled={isLast} aria-label="Omlaag verplaatsen">
-            <ArrowDown className="size-4" />
-          </Button>
-        </div>
+      <div className="mt-3 flex items-center justify-end border-t border-border pt-3">
         <div className="flex items-center gap-1">
           <Button
             size="icon-sm"

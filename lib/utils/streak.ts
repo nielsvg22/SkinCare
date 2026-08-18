@@ -2,7 +2,7 @@ import type { DailyLog, Product, StreakInfo } from "@/lib/types";
 import { addDaysToKey, getWeekStartKey, parseDateKey, todayKey } from "@/lib/utils/date";
 import { buildRoutineForDay, isDayFullyCompleted, requiredStepIds } from "@/lib/utils/routine";
 
-export type DayStatus = "completed" | "partial" | "missed" | "future" | "no-routine";
+export type DayStatus = "completed" | "partial" | "missed" | "future" | "no-routine" | "paused";
 
 export function getDayStatus(
   products: Product[],
@@ -13,6 +13,7 @@ export function getDayStatus(
   if (dateKey > today) return "future";
 
   const log = logs[dateKey];
+  if (log?.dayPaused) return "paused";
   const date = parseDateKey(dateKey);
   const day = buildRoutineForDay(products, date, log, log?.shaveDayEnabled ?? false);
   const required = requiredStepIds(day);
@@ -38,7 +39,7 @@ export function computeStreaks(
   let first = true;
   while (true) {
     const status = getDayStatus(products, logs, cursor);
-    if (status === "no-routine") {
+    if (status === "no-routine" || status === "paused") {
       cursor = addDaysToKey(cursor, -1);
       continue;
     }
@@ -57,26 +58,24 @@ export function computeStreaks(
     break;
   }
 
-  // Longest streak: scan all known log dates plus today.
+  // Longest streak: walk every calendar day from the first known log to
+  // today (not just days that happen to have a log entry — a day the user
+  // never opened the app is a real gap, not an invisible one). No-routine
+  // and paused days are transparent: they neither extend nor break a run.
   const dateKeys = Object.keys(logs).sort();
   let longest = 0;
-  let running = 0;
-  let prevKey: string | null = null;
-  for (const key of dateKeys) {
-    if (key > refKey) continue;
-    const status = getDayStatus(products, logs, key);
-    if (status === "no-routine") continue;
-    if (status === "completed") {
-      if (prevKey && addDaysToKey(prevKey, 1) === key) {
+  if (dateKeys.length > 0) {
+    let running = 0;
+    let cursor = dateKeys[0];
+    while (cursor <= refKey) {
+      const status = getDayStatus(products, logs, cursor);
+      if (status === "completed") {
         running += 1;
-      } else {
-        running = 1;
+        longest = Math.max(longest, running);
+      } else if (status !== "no-routine" && status !== "paused") {
+        running = 0;
       }
-      longest = Math.max(longest, running);
-      prevKey = key;
-    } else {
-      running = 0;
-      prevKey = key;
+      cursor = addDaysToKey(cursor, 1);
     }
   }
   longest = Math.max(longest, current);
@@ -89,7 +88,7 @@ export function computeStreaks(
     const key = addDaysToKey(weekStart, i);
     if (key > refKey) continue;
     const status = getDayStatus(products, logs, key);
-    if (status === "no-routine") continue;
+    if (status === "no-routine" || status === "paused") continue;
     totalDaysThisWeek += 1;
     if (status === "completed") completedThisWeek += 1;
   }
@@ -110,7 +109,7 @@ export function percentCompletedInRange(
   let cursor = startKey;
   while (cursor <= endKey) {
     const status = getDayStatus(products, logs, cursor);
-    if (status !== "no-routine" && status !== "future") {
+    if (status !== "no-routine" && status !== "future" && status !== "paused") {
       total += 1;
       if (status === "completed") completed += 1;
     }
@@ -165,7 +164,7 @@ export function productConsistency(
     const log = logs[key];
     const date = parseDateKey(key);
     const day = buildRoutineForDay(products, date, log, log?.shaveDayEnabled ?? false);
-    for (const step of [...day.morning, ...day.evening]) {
+    for (const step of [...day.morning, ...day.evening, ...Object.values(day.custom).flat()]) {
       if (!step.scheduledToday || step.optionalToday || step.placeholder || step.kind !== "product") {
         continue;
       }

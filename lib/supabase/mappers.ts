@@ -24,6 +24,8 @@ export function productFromRow(row: Record<string, unknown>): Product {
     usagePerApplication: row.usage_per_application as Product["usagePerApplication"],
     stock: row.stock as Product["stock"],
     purchasePrice: row.purchase_price === null ? undefined : Number(row.purchase_price),
+    purchaseUrl: (row.purchase_url as string) ?? undefined,
+    customMoment: (row.custom_moment as string) ?? undefined,
     shaveOnly: !!row.shave_only,
     optional: !!row.optional,
     conditionalNote: (row.conditional_note as string) ?? undefined,
@@ -49,11 +51,17 @@ export function productToRow(product: Partial<Product>, userId?: string) {
   if (product.instructions !== undefined) row.instructions = product.instructions;
   if (product.usagePerApplication !== undefined) row.usage_per_application = product.usagePerApplication;
   if (product.stock !== undefined) row.stock = product.stock;
-  if (product.purchasePrice !== undefined) row.purchase_price = product.purchasePrice ?? null;
+  // These use `in` (key present) rather than `!== undefined` (value present):
+  // callers that want to CLEAR one of these pass `{ ...field: undefined }`
+  // explicitly, which must still write null — a plain `!== undefined` check
+  // would silently skip it and leave the old value in the database forever.
+  if ("purchasePrice" in product) row.purchase_price = product.purchasePrice ?? null;
+  if ("purchaseUrl" in product) row.purchase_url = product.purchaseUrl ?? null;
+  if ("customMoment" in product) row.custom_moment = product.customMoment ?? null;
   if (product.shaveOnly !== undefined) row.shave_only = product.shaveOnly;
   if (product.optional !== undefined) row.optional = product.optional;
-  if (product.conditionalNote !== undefined) row.conditional_note = product.conditionalNote ?? null;
-  if (product.shaveDayNote !== undefined) row.shave_day_note = product.shaveDayNote ?? null;
+  if ("conditionalNote" in product) row.conditional_note = product.conditionalNote ?? null;
+  if ("shaveDayNote" in product) row.shave_day_note = product.shaveDayNote ?? null;
   if (product.paused !== undefined) row.paused = product.paused;
   if (product.order !== undefined) row.sort_order = product.order;
   if (product.createdAt !== undefined) row.created_at = product.createdAt;
@@ -66,6 +74,7 @@ export function logFromRow(row: Record<string, unknown>): DailyLog {
     completedStepIds: (row.completed_step_ids as string[]) ?? [],
     skippedStepIds: (row.skipped_step_ids as string[]) ?? [],
     shaveDayEnabled: !!row.shave_day_enabled,
+    dayPaused: !!row.day_paused,
   };
 }
 
@@ -76,6 +85,7 @@ export function logToRow(log: DailyLog, userId: string) {
     completed_step_ids: log.completedStepIds,
     skipped_step_ids: log.skippedStepIds,
     shave_day_enabled: log.shaveDayEnabled,
+    day_paused: !!log.dayPaused,
   };
 }
 
