@@ -14,6 +14,7 @@ import type {
 import { todayKey } from "@/lib/utils/date";
 import { createClient } from "@/lib/supabase/client";
 import { deleteUserImage } from "@/lib/storage/supabase-storage";
+import { enqueuePendingLog, dequeuePendingLog, getPendingLogs } from "@/lib/offline/log-queue";
 import {
   clearAllUserData,
   deleteProductRow,
@@ -45,6 +46,32 @@ function getSupabase() {
 
 function reportError(action: string) {
   toast.error(`${action} kon niet worden opgeslagen — controleer je internetverbinding`);
+}
+
+let offlineToastShown = false;
+
+/**
+ * Writes a daily log to Supabase. On a network failure (not offline by
+ * choice — genuinely unreachable), the log is queued in localStorage rather
+ * than just showing an error, and gets retried automatically once the
+ * device is back online (see components/pwa/offline-sync.tsx).
+ */
+function syncLog(userId: string, log: DailyLog) {
+  upsertLogRow(getSupabase(), userId, log).then(({ error }) => {
+    if (!error) {
+      dequeuePendingLog(log.date);
+      return;
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueuePendingLog(log);
+      if (!offlineToastShown) {
+        offlineToastShown = true;
+        toast("Je bent offline — wordt gesynchroniseerd zodra je weer verbinding hebt", { icon: "📡" });
+      }
+    } else {
+      reportError("Voortgang");
+    }
+  });
 }
 
 interface AppActions {
@@ -91,6 +118,9 @@ interface AppActions {
   _hasHydrated: boolean;
   hydrate: (userId: string, data: AppState) => void;
   reset: () => void;
+
+  /** Retries any log writes that were queued while offline. */
+  flushPendingLogs: () => void;
 }
 
 type Store = AppState & AppActions;
@@ -132,6 +162,12 @@ export const useStore = create<Store>()((set, get) => ({
   hydrate: (userId, data) => set({ ...data, userId, _hasHydrated: true }),
   reset: () => set({ ...emptyState, userId: null, _hasHydrated: false }),
 
+  flushPendingLogs: () => {
+    const userId = get().userId;
+    if (!userId) return;
+    getPendingLogs().forEach((log) => syncLog(userId, log));
+  },
+
   completeStep: (stepId, dateKey = todayKey()) => {
     const log = ensureLog(get().logs, dateKey);
     if (log.completedStepIds.includes(stepId)) return;
@@ -142,7 +178,7 @@ export const useStore = create<Store>()((set, get) => ({
     };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Voortgang"));
+    if (userId) syncLog(userId, updated);
   },
 
   uncompleteStep: (stepId, dateKey = todayKey()) => {
@@ -150,7 +186,7 @@ export const useStore = create<Store>()((set, get) => ({
     const updated: DailyLog = { ...log, completedStepIds: log.completedStepIds.filter((id) => id !== stepId) };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Voortgang"));
+    if (userId) syncLog(userId, updated);
   },
 
   toggleStep: (stepId, dateKey = todayKey()) => {
@@ -168,7 +204,7 @@ export const useStore = create<Store>()((set, get) => ({
     const updated: DailyLog = { ...log, skippedStepIds: [...log.skippedStepIds, stepId] };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Voortgang"));
+    if (userId) syncLog(userId, updated);
   },
 
   unskipStepToday: (stepId, dateKey = todayKey()) => {
@@ -176,7 +212,7 @@ export const useStore = create<Store>()((set, get) => ({
     const updated: DailyLog = { ...log, skippedStepIds: log.skippedStepIds.filter((id) => id !== stepId) };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Voortgang"));
+    if (userId) syncLog(userId, updated);
   },
 
   setShaveDayEnabled: (enabled, dateKey = todayKey()) => {
@@ -184,7 +220,7 @@ export const useStore = create<Store>()((set, get) => ({
     const updated: DailyLog = { ...log, shaveDayEnabled: enabled };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Scheerdag"));
+    if (userId) syncLog(userId, updated);
   },
 
   getShaveDayEnabled: (dateKey = todayKey()) => get().logs[dateKey]?.shaveDayEnabled ?? false,
@@ -194,7 +230,7 @@ export const useStore = create<Store>()((set, get) => ({
     const updated: DailyLog = { ...log, dayPaused: paused };
     set((state) => ({ logs: { ...state.logs, [dateKey]: updated } }));
     const userId = get().userId;
-    if (userId) upsertLogRow(getSupabase(), userId, updated).then(({ error }) => error && reportError("Pauzestand"));
+    if (userId) syncLog(userId, updated);
   },
 
   addProduct: (input) => {

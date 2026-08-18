@@ -204,3 +204,16 @@ drop policy if exists "users manage their own routine-photos" on storage.objects
 create policy "users manage their own routine-photos" on storage.objects
   for all using (bucket_id = 'routine-photos' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'routine-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ─────────────────────────────────────────────────────────────
+-- Storage bucket for automated weekly backups (private — the cron writes
+-- with the service_role key, which bypasses these policies entirely; users
+-- can only read their own folder, never write to it directly)
+-- ─────────────────────────────────────────────────────────────
+insert into storage.buckets (id, name, public)
+values ('backups', 'backups', false)
+on conflict (id) do nothing;
+
+drop policy if exists "users read their own backups" on storage.objects;
+create policy "users read their own backups" on storage.objects
+  for select using (bucket_id = 'backups' and auth.uid()::text = (storage.foldername(name))[1]);

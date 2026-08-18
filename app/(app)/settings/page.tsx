@@ -10,6 +10,8 @@ import { ScheduleEditor } from "@/components/settings/schedule-editor";
 import { ExportImport } from "@/components/settings/export-import";
 import { RemindersToggle } from "@/components/settings/reminders-toggle";
 import { SignOutButton } from "@/components/settings/sign-out-button";
+import { AppLockToggle } from "@/components/settings/app-lock-toggle";
+import { BackupList } from "@/components/settings/backup-list";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -92,6 +94,16 @@ export default function SettingsPage() {
 
         <SettingsSection title="Data" description="Veilig opgeslagen in je eigen account">
           <ExportImport />
+        </SettingsSection>
+
+        <SettingsSection title="Automatische back-ups" description="Wekelijkse momentopname, los van handmatig exporteren">
+          <BackupList />
+        </SettingsSection>
+
+        <SettingsSection title="Beveiliging" description="Vergrendel de app lokaal met Face ID / Touch ID">
+          <SettingsRow label="Appvergrendeling">
+            <AppLockToggle />
+          </SettingsRow>
         </SettingsSection>
 
         <SettingsSection title="Account">
