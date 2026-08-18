@@ -1,9 +1,14 @@
 import type { DailyLog, Product, WeeklyCheckIn } from "@/lib/types";
-import { addDaysToKey, todayKey } from "@/lib/utils/date";
+import { addDaysToKey, toDateKey, todayKey } from "@/lib/utils/date";
 import { buildRoutineForDay, requiredStepIds } from "@/lib/utils/routine";
 import { getDayStatus, productConsistency } from "@/lib/utils/streak";
 import { estimateConsumption } from "@/lib/utils/consumption";
 import { parseDateKey } from "@/lib/utils/date";
+
+const DUTCH_MONTHS_LONG = [
+  "januari", "februari", "maart", "april", "mei", "juni",
+  "juli", "augustus", "september", "oktober", "november", "december",
+];
 
 /** Partial-credit completion percentage for a single tracked day (0-100). */
 function dayCompletionPercent(products: Product[], logs: Record<string, DailyLog>, dateKey: string): number | null {
@@ -147,5 +152,68 @@ export function checkInTrend(checkIns: WeeklyCheckIn[]): CheckInTrend | null {
   return {
     entries: [entry("Haar", "hair"), entry("Huid", "skin"), entry("Ogen", "eyes")],
     weeksTracked: sorted.length,
+  };
+}
+
+export interface MonthlyWrapped {
+  monthLabel: string;
+  completedDays: number;
+  totalDays: number;
+  percent: number;
+  bestStreakInMonth: number;
+  mostConsistentProduct: string | null;
+  leastConsistentProduct: string | null;
+}
+
+/** A month-in-review summary — for the current month up through today, or any completed month if you pass its 1st. */
+export function monthlyWrapped(
+  products: Product[],
+  logs: Record<string, DailyLog>,
+  monthStart: Date
+): MonthlyWrapped {
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const today = parseDateKey(todayKey());
+  const rangeEnd = lastOfMonth < today ? lastOfMonth : today;
+
+  const startKey = toDateKey(firstOfMonth);
+  const endKey = toDateKey(rangeEnd);
+
+  let totalDays = 0;
+  let completedDays = 0;
+  let running = 0;
+  let bestStreakInMonth = 0;
+  let cursor = startKey;
+  while (cursor <= endKey) {
+    const status = getDayStatus(products, logs, cursor);
+    if (status !== "no-routine" && status !== "paused" && status !== "future") {
+      totalDays += 1;
+      if (status === "completed") {
+        completedDays += 1;
+        running += 1;
+        bestStreakInMonth = Math.max(bestStreakInMonth, running);
+      } else {
+        running = 0;
+      }
+    }
+    cursor = addDaysToKey(cursor, 1);
+  }
+
+  const daysBack = Math.max(1, Math.round((rangeEnd.getTime() - firstOfMonth.getTime()) / 86_400_000) + 1);
+  const consistency = productConsistency(products, logs, daysBack).filter((c) => c.scheduledDays >= 3);
+  const mostConsistentProduct = consistency.length > 0 ? consistency[consistency.length - 1].productName : null;
+  const leastConsistentProduct =
+    consistency.length > 1 && consistency[0].percent < 100 ? consistency[0].productName : null;
+
+  return {
+    monthLabel: `${DUTCH_MONTHS_LONG[month]} ${year}`,
+    completedDays,
+    totalDays,
+    percent: totalDays === 0 ? 0 : Math.round((completedDays / totalDays) * 100),
+    bestStreakInMonth,
+    mostConsistentProduct,
+    leastConsistentProduct,
   };
 }

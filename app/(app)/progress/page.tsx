@@ -8,10 +8,12 @@ import { StatTile } from "@/components/stats/stat-tile";
 import { SimpleBarChart } from "@/components/stats/simple-bar-chart";
 import { StreakEffect } from "@/components/stats/streak-effect";
 import { ExpenseOverview } from "@/components/stats/expense-overview";
+import { WrappedDialog } from "@/components/stats/wrapped-dialog";
 import { CheckInForm } from "@/components/checkin/checkin-form";
 import { CheckInHistory } from "@/components/checkin/checkin-history";
 import { AddPhotoDialog } from "@/components/photos/add-photo-dialog";
 import { PhotoTimeline } from "@/components/photos/photo-timeline";
+import { ComparePhotosDialog } from "@/components/photos/compare-photos-dialog";
 import { useStore } from "@/lib/store";
 import { addDaysToKey, todayKey } from "@/lib/utils/date";
 import { computeStreaks, last30DaysCompletion, percentCompletedInRange, productConsistency } from "@/lib/utils/streak";
@@ -50,6 +52,8 @@ export default function ProgressPage() {
           </TabsList>
 
           <TabsContent value="stats" className="flex flex-col gap-5">
+            <WrappedDialog />
+
             <div className="grid grid-cols-2 gap-3">
               <StatTile label="Deze week" value={`${weekPercent}%`} icon={<TrendingUp className="size-5" />} accent="blue" />
               <StatTile label="Deze maand" value={`${monthPercent}%`} icon={<TrendingUp className="size-5" />} accent="green" />
@@ -104,7 +108,8 @@ export default function ProgressPage() {
           </TabsContent>
 
           <TabsContent value="photos" className="flex flex-col gap-5">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <ComparePhotosDialog />
               <AddPhotoDialog />
             </div>
             <PhotoTimeline />
