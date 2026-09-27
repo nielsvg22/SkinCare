@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Library, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -61,11 +62,16 @@ export function LibraryPickerDialog({ onPick }: LibraryPickerDialogProps) {
                 key={item.id}
                 type="button"
                 onClick={() => handlePick(item)}
-                className="flex flex-col items-start gap-0.5 rounded-radius border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-surface-2"
+                className="flex items-center gap-3 rounded-radius border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-surface-2"
               >
-                <span className="text-sm font-medium text-foreground">{item.name}</span>
-                <span className="text-xs text-foreground-muted">
-                  {item.brand} · {item.category}
+                <span className="relative size-10 shrink-0 overflow-hidden rounded-radius bg-surface-2">
+                  <Image src={item.image} alt="" fill sizes="40px" className="object-contain" />
+                </span>
+                <span className="flex flex-col items-start gap-0.5">
+                  <span className="text-sm font-medium text-foreground">{item.name}</span>
+                  <span className="text-xs text-foreground-muted">
+                    {item.brand} · {item.category}
+                  </span>
                 </span>
               </button>
             ))
